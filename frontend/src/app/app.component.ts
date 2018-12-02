@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { AuthentificationService } from './components/services/authentification.service';
 import { Router } from '../../node_modules/@angular/router';
 
 @Component({
@@ -9,11 +8,6 @@ import { Router } from '../../node_modules/@angular/router';
 })
 export class AppComponent {
   title = 'Mon jardin';
-  constructor(private app: AuthentificationService,  private router: Router) {
-  }
-  public logout() {
-    this.app.logout(() => {
-    this.router.navigateByUrl('/login');
-    });
+  constructor(  private router: Router) {
   }
 }
