@@ -104,7 +104,6 @@ public  class JwtSecurityConfig extends WebSecurityConfigurerAdapter {
         "Content-Type, Access-Control-Request-Method, Custom-Filter-Header"); //obligatooire
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        logger.debug("instanciation du bean cors");
         return source;
     }
 }
