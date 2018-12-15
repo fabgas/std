@@ -1,6 +1,7 @@
 package org.alma.authentification.users.domain;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,4 +29,20 @@ public class Authority implements Serializable{
     @Id
     @Column(length = 50)
     private String name;
+
+    /**
+     * Surcharge du equals pour la recherche dans les collections
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Authority)) return false;
+        Authority auth = (Authority)o;
+        return Objects.equals(auth.getName(), this.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.getName());
+    }
 }

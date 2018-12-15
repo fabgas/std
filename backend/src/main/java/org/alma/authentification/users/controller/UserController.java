@@ -1,6 +1,7 @@
 package org.alma.authentification.users.controller;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,8 @@ import org.alma.authentification.users.errors.InvalidPasswordException;
 import org.alma.authentification.users.errors.UserNotFoundException;
 import org.alma.authentification.users.repositories.UserRepository;
 import org.alma.authentification.users.services.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api")
 public  class UserController {
-
+    final Logger logger = LoggerFactory.getLogger(UserController.class);
     @Autowired 
     UserRepository userRepository;
     
@@ -39,14 +42,23 @@ public  class UserController {
     UserService userService;
 
     @GetMapping("/users")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public final ResponseEntity<List<User>> getUsers() {
         List<User> users = userRepository.findAll();
         return new ResponseEntity<List<User>>(users, HttpStatus.OK);
     }
+     
+    @GetMapping("/users/{username}")
+    public final ResponseEntity<User> getUser(@PathVariable String username) {
       
+        Optional<User> oUser = userRepository.findOneByUsername(username);
+        if (oUser.isPresent()) {
+            return new ResponseEntity<User>(oUser.get(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(null, HttpStatus.NO_CONTENT);
+    }
+     
+
     @PutMapping("/users")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public final ResponseEntity<User> createUser(@Valid @RequestBody UserDTO userDTO) {
         User user = userService.createUser(userDTO);
         return new ResponseEntity<User>(user, HttpStatus.CREATED);
@@ -57,10 +69,10 @@ public  class UserController {
          userService.updateUser(userDTO);
         return new ResponseEntity<UserDTO>(userDTO, HttpStatus.OK);
     }
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    @DeleteMapping("/users")
-    public final ResponseEntity<Void> deleteUser(@RequestBody UserDTO userDTO) {
-        userService.deleteUser(userDTO);
+    
+    @DeleteMapping("/users/{username}")
+    public final ResponseEntity<Void> deleteUser(@PathVariable String username) {
+         userService.deleteUser(username);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
     
@@ -76,7 +88,7 @@ public  class UserController {
     }
     
     // ---------------- operations d'affectations des authorities -------------------
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+   
     @GetMapping("/users/authorities/{username}")
     public ResponseEntity<List<Authority>> getAuthorities(@PathVariable String username) {
         Set<Authority> authorities = userService.getAuthorities(username);
@@ -85,11 +97,33 @@ public  class UserController {
         }
         return new ResponseEntity<>(authorities.stream().collect(Collectors.toList()),HttpStatus.OK);
     }
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    /**
+     * Ajoute une autorité à l'utilisateur
+     * @param username
+     * @param authority
+     * @return
+     */
+
     @PostMapping("/users/authorities/{username}/{authority}")
     public ResponseEntity<Void> setAuthority(@PathVariable String username, @PathVariable String authority) {
         try {
             userService.affecteAuthority(username,authority);
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        catch(UserNotFoundException | AuthorityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+    /**
+     * Supprime l'autorité à l'utilisateur
+     * @param username
+     * @param authority
+     * @return
+     */
+    @DeleteMapping("/users/authorities/{username}/{authority}")
+    public ResponseEntity<Void> deleteAuthority(@PathVariable String username, @PathVariable String authority) {
+        try {
+            userService.deleteAuthority(username,authority);
             return new ResponseEntity<>(HttpStatus.OK);
         }
         catch(UserNotFoundException | AuthorityNotFoundException e) {

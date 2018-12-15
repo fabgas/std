@@ -1,9 +1,12 @@
 package org.alma.authentification.security;
 
+import java.util.Arrays;
+
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.reactive.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -15,13 +18,17 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Classe pour définir la politique générale de sécurité
  */
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+//@EnableGlobalMethodSecurity(prePostEnabled = true)
 public  class JwtSecurityConfig extends WebSecurityConfigurerAdapter {
+    Logger logger = LoggerFactory.getLogger(JwtSecurityConfig.class);
 
     // Besoin de déclarer comment récupérer les users
     @Autowired
@@ -34,8 +41,6 @@ public  class JwtSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(WebSecurity web) throws Exception {
         web.ignoring()
-            .antMatchers(HttpMethod.OPTIONS, "/**")
-            .antMatchers(HttpMethod.GET, "/**")
             .antMatchers("**/*.{js,html}")
             .antMatchers("/i18n/**")
             .antMatchers("/content/**")
@@ -48,7 +53,7 @@ public  class JwtSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable()
+        http.cors().and().csrf().disable()
           // make sure we use stateless session; session won't be used to store user's state.
              .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
              .and()
@@ -88,5 +93,18 @@ public  class JwtSecurityConfig extends WebSecurityConfigurerAdapter {
 	public JwtConfig jwtConfig() {
         	return new JwtConfig();
 	}
-	
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "content-type", "x-auth-token","X-Requested-With"));
+        configuration.setAllowCredentials(true);
+        configuration.addExposedHeader("Authorization, x-xsrf-token, Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, " +
+        "Content-Type, Access-Control-Request-Method, Custom-Filter-Header"); //obligatooire
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        logger.debug("instanciation du bean cors");
+        return source;
+    }
 }

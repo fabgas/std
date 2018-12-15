@@ -47,7 +47,7 @@ public class UserService {
         String password = passwordEncoder.encode(userDTO.getUsername());
         User user = new User();
         user.setPassword(password);
-        user.setFullname(userDTO.getFullName());
+        user.setFullname(userDTO.getFullname());
         user.setUsername(userDTO.getUsername());
         userRepository.save(user);
         return user;
@@ -59,7 +59,7 @@ public class UserService {
      */
     public void updateUser(UserDTO userDTO) {
         userRepository.findOneByUsername(userDTO.getUsername()).ifPresent(user -> {
-            user.setFullname(userDTO.getFullName());
+            user.setFullname(userDTO.getFullname());
          // sauvegarde automatique
         });;
     }
@@ -68,8 +68,8 @@ public class UserService {
      * Delete a user identified by is userName
      * @param userDTO
      */
-    public void deleteUser(UserDTO userDTO) {
-        userRepository.findOneByUsername(userDTO.getUsername()).ifPresent(
+    public void deleteUser(String username) {
+        userRepository.findOneByUsername(username).ifPresent(
             user -> {
                 this.userRepository.delete(user);
             });         
@@ -116,6 +116,35 @@ public class UserService {
                 };
                 user.getAuthorities().add(oAuthority.get());
                 return;
+            }
+            logger.debug("authority not found");
+            throw new AuthorityNotFoundException();
+        }
+        logger.debug("user not found");
+        throw new UserNotFoundException();
+    }
+
+    /**
+     * Supprime l'autorité à l'utilisateur
+     * @param username
+     * @param authority
+     * @throws UserNotFoundException
+     * @throws AuthorityNotFoundException
+     */
+    public void deleteAuthority(String username, String authority) throws UserNotFoundException,AuthorityNotFoundException{
+        // vérification de l'existence du user
+        Optional<User> oUser= userRepository.findOneWithAuthoritiesByUsername(username);
+        if (oUser.isPresent()) {
+            Optional<Authority> oAuthority = authorityRepository.findById(authority);
+            if (oAuthority.isPresent()) {
+                User user = oUser.get();
+                if (user.getAuthorities().stream().filter(autho -> authority.equals(autho.getName())).findFirst().isPresent()) {
+                    // autority  trouvée.
+                    logger.debug("authority trouvée");
+                    user.getAuthorities().remove(oAuthority.get());
+                    return;
+                };
+               
             }
             logger.debug("authority not found");
             throw new AuthorityNotFoundException();

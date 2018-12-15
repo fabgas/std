@@ -19,5 +19,5 @@ public final class UserDTO {
     private String username;
 
     @Size(min=0,max=120)
-    private String fullName;
+    private String fullname;
 }

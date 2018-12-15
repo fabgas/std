@@ -60,7 +60,7 @@ public final class User implements Serializable {
     @Column(name="full_name",length = 120, nullable=false)
     private String fullname;
 
-    @JsonIgnore
+ 
     @ManyToMany
     @JoinTable(
         name = "STD_USER_AUTHORITY",
